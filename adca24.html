@@ -92,7 +92,7 @@
                     <!--course ke liye ek new selection create krna hai -->
                         <div class="ekmedekhanahai1">
                             <label for="courses">COURSE NAME   </label>
-                            <p class="somethingnew" class="text-xl uppercase ele"> <span id="courseName1"> </span></p>  
+                            <p class="somethingnew" class="text-xl uppercase ele"> <span id="courseNamex"> </span></p>  
                             
                         </div>  
                         
@@ -116,7 +116,7 @@
                         </div> 
                         <div class="ekmedekhanahai1">              
                             <label for="grade5">Grade :</label>
-                            <select id="examHeldOn" name="examHeldOn" onchange="generateQRCode()">                            
+                            <select id="examHeldOnx" name="examHeldOn" onchange="generateQRCode()">                            
                             <option value="FebruaryH2024">Excellent</option>
                             </select>
                         </div>              
@@ -211,7 +211,7 @@
                                             </div>
                                             <div class="grid grid-cols-3">
                                             <div>
-                                                <p class="text-xl uppercase ele">Certificate Nub .: <span id="qrc">18205</span></p>
+                                                <p class="text-xl uppercase ele">Certificate Nub .: <span id="qrc">Invalid</span></p>
                                                 <div id="qrcode"></div>
                                                 <!--
                                                 <img id="qr" class="m-auto" src="https://www.gcsm.net.in/assets/tmp-assets/images/qr.png">
@@ -224,7 +224,7 @@
                                             <div class="justify-self-center pt-2">
                                                 <div class="w-28 border border-black ml-auto mr-auto h-32" id="cropperContainer">
                                                 <img id="croppedImage" src="default-photo.png" alt="Student Photo">
-                                                <div id="message">Loading...</div>
+                                                <!-- <div id="message">Loading...</div> -->
                                                 <!-- <img id="previewImage11" src="#" alt="previewImage">  -->
                                             </div>
                                             <p class="c-font text-2xl mt-4">Global Foundation</p>
@@ -259,14 +259,14 @@
                                             <div id="durationText" class="flex pt-2 pb-2 text-left">
                                                 <div class="flex-initial w-fit">of Duration</div>
                                                 <!-- yaha mujhe duration change krna hai  -->
-                                                <p  class="normal-font ml-2 mr-2 flex justify-center uppercase items-center border-b border-black border-dotted"><span id="selectedDuration" class="font-bold">TWELVE</span></p>
+                                                <p  class="normal-font ml-2 mr-2 flex justify-center uppercase items-center border-b border-black border-dotted"><span id="selectedDuration" class="font-bold">Invalid</span></p>
                                                 <div class="flex-initial w-fit">Month who</div>
                                             </div>
                                             <!-- iske uppar wala ke liye likha gya hai ye code-->
                                             <div class="flex pt-2 pb-2 text-left">
                                                 <div class="flex-initial w-fit">has passed the examination held on</div>
                                                 <!-- jiska id hai exam display-->
-                                                <p id="examDisplay" class="ml-2 normal-font mr-2 flex justify-center items-center border-b border-black border-dotted"><span class="font-bold uppercase">February 2025</span></p>
+                                                <p id="examDisplay" class="ml-2 normal-font mr-2 flex justify-center items-center border-b border-black border-dotted"><span class="font-bold uppercase">February 2024</span></p>
                                                 <div class="flex-initial w-fit">and</div>                                                                                                           <!--isko hi change krna hai-->
                                             </div>
                                             <div class="flex pt-2 pb-2 text-left">
@@ -310,7 +310,7 @@
         </div>
     </div>
 </div>
-<div id="message">Please Wait...</div>
+<!-- <div id="message">Please Wait...</div> -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
 
 

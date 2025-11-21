@@ -1,10 +1,11 @@
-{/* <script> */}
+/* <script> */
 const API_KEY = 'AIzaSyA2UyAU-6qR-nwwfauzdFG-CxhpVSSh8yw';
 const SPREADSHEET_ID = '1q9KL8CBHjPuhPohyTcGp9wk68VxkJ6OT8DZrRctwRyI';
 const SHEET_NAME = 'Sheet2';
+
 let cropper, qr;
 
-// ✅ Column convert helper
+// Convert Column Number → Letter
 function columnToLetter(column) {
   let temp, letter = '';
   while (column > 0) {
@@ -15,137 +16,160 @@ function columnToLetter(column) {
   return letter;
 }
 
-// 🔹 मुख्य function जो cache + data + photo + QR सब संभालेगा
+// Main function
 async function fetchFullData() {
   const roll = document.getElementById("idInput").value.trim();
   const message = document.getElementById("message");
   const errorMsg = document.getElementById("errorMsg");
-  const photoElement = document.getElementById("previewImage");
-  const photopreview = document.getElementById("croppedImage");
 
   if (!roll) {
-    message.innerText = "⚠️ कृपया रोल नंबर दर्ज करें!";
+    message.innerText = "⚠️ कृपया रोल या MS नंबर दर्ज करें!";
     return;
   }
 
-  // ✅ पहले cache चेक करो
+  // 📌 पहले CACHE चेक करो
   const cached = sessionStorage.getItem(`roll_${roll}`);
   if (cached) {
     const fields = JSON.parse(cached);
     displayFields(fields);
     displayPhotoAndQR(fields);
-    message.innerText = "✅ Cached Data लोड हुआ (कोई API खर्च नहीं)";
-    console.log("🟢 Cached data loaded!");
+    message.innerText = "✅ Cached Data लोड हुआ";
     return;
   }
 
-  // ❌ Cache नहीं मिला → API चलाओ
   message.innerText = "⏳ डेटा लोड हो रहा है...";
   errorMsg.innerText = "";
 
   try {
-    // Sheet properties fetch
+    // Get Sheet Size
     const sheetPropsUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}?fields=sheets(properties(title,gridProperties))&key=${API_KEY}`;
     const propsRes = await fetch(sheetPropsUrl);
     const propsData = await propsRes.json();
     const sheet = propsData.sheets.find(s => s.properties.title === SHEET_NAME);
     const rowCount = sheet.properties.gridProperties.rowCount;
     const colCount = sheet.properties.gridProperties.columnCount;
-    const lastColumnLetter = columnToLetter(colCount);
-    const fullRange = `${SHEET_NAME}!A1:${lastColumnLetter}${rowCount}`;
 
-    // सभी values लाओ
+    const lastColumn = columnToLetter(colCount);
+    const fullRange = `${SHEET_NAME}!A1:${lastColumn}${rowCount}`;
+
+    // Fetch all sheet values
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${fullRange}?key=${API_KEY}`;
     const res = await fetch(url);
     const data = await res.json();
     const rows = data.values;
     const headers = rows[0];
-    const rollIndex = headers.indexOf("ROLL_NUB");
-    const photoIndex = headers.indexOf("photourl");
 
-    const record = rows.find((row, i) => i > 0 && (row[rollIndex] === roll || row[0] === roll));
+    // Column indexes
+    const rollIndex = headers.indexOf("ROLL_NUB");
+    const msIndex = headers.indexOf("Ms_Nub");
+
+    // DUAL SEARCH → Roll or MS दोनों से
+    const record = rows.find((row, i) =>
+      i > 0 && (
+        (row[rollIndex] && row[rollIndex].trim().toLowerCase() === roll.toLowerCase()) ||
+        (row[msIndex] && row[msIndex].trim().toLowerCase() === roll.toLowerCase())
+      )
+    );
+
+    // Not Found
     if (!record) {
-      errorMsg.innerText = "❌ रिकॉर्ड नहीं मिला।";
+      errorMsg.innerText = "❌ रिकॉर्ड नहीं मिला!";
       message.innerText = "";
       return;
     }
 
-    // Field Mapping
+    // Map fields
     const fields = {};
     headers.forEach((h, i) => fields[h] = record[i] || "N/A");
 
-    // ✅ Cache में सेव कर दो (ताकि reload पर दोबारा API न लगे)
+    // Cache save
     sessionStorage.setItem(`roll_${roll}`, JSON.stringify(fields));
 
-    // ✅ Display data
+    // Display Data
     displayFields(fields);
     displayPhotoAndQR(fields);
-    message.innerText = "✅ डेटा और फोटो सफलतापूर्वक लोड हो गए! (API used once)";
+
+    message.innerText = "✅ डेटा सफलतापूर्वक लोड हुआ!";
+
   } catch (err) {
-    console.error("Error:", err);
-    errorMsg.innerText = "⚠️ डेटा लाने में त्रुटि हुई।";
+    console.error("Fetch Error:", err);
+    errorMsg.innerText = "⚠️ डेटा लाने में त्रुटि!";
     message.innerText = "";
   }
 }
 
-// 🔹 Text fields show करने वाला function
+// Display Fields
 function displayFields(fields) {
-  document.getElementById("RollNubid").innerText = fields['ROLL_NUB'] || "N/A";
-  document.getElementById("studentName").innerText = fields['NAME'] || "N/A";
-  document.getElementById("fatherName").innerText = fields['FATHERS_NAME'] || "N/A";
-  document.getElementById("DOBfatch").innerText = fields['DOB'] || "N/A";
-  document.getElementById("courseName").innerText = fields['SELECT_COURSE'] || "N/A";
-  document.getElementById("qrc").innerText = fields['Ms_Nub'] || "N/A";
-  // document.getElementById("englishspeed").innerText = fields['English_Typ'] || "N/A";
-  // document.getElementById("hindispeed").innerText = fields['Hindi_Typ'] || "N/A";
-  document.title = fields['ROLL_NUB'] || "Certificate Search";
+  document.getElementById("RollNubid").innerText = fields['ROLL_NUB'];
+  document.getElementById("studentName").innerText = fields['NAME'];
+  document.getElementById("fatherName").innerText = fields['FATHERS_NAME'];
+  document.getElementById("DOBfatch").innerText = fields['DOB'];
+
+  // COURSE
+  document.getElementById("courseName").innerText = fields['SELECT_COURSE'];
+
+  // Duration Logic
+  let duration = "";
+  if (fields['SELECT_COURSE'] === "Diploma in Computer Application") duration = "SIX";
+  else if (fields['SELECT_COURSE'] === "Advance Diploma in Computer Application") duration = "TWELVE";
+
+  document.getElementById("selectedDuration").innerText = duration;
+
+  // MS Number (QR Code)
+  document.getElementById("qrc").innerText = fields['Ms_Nub'];
+
+  // Page Title Update
+  document.title = fields['ROLL_NUB'];
 }
 
-// 🔹 QR और फोटो दिखाने वाला function
+// Photo + QR Generate
 function displayPhotoAndQR(fields) {
-  const qrData = `
-    Certificate No: ${fields['Ms_Nub'] || "N/A"}
-    Roll No: ${fields['ROLL_NUB'] || "N/A"}
-    Name: ${fields['NAME'] || "N/A"}
-    Father's Name: ${fields['FATHERS_NAME'] || "N/A"}
-    DOB: ${fields['DOB'] || "N/A"}
-    Course: ${fields['SELECT_COURSE'] || "N/A"}
+  const qrText = `
+    Certificate No: ${fields['Ms_Nub']}
+    Roll No: ${fields['ROLL_NUB']}
+    Name: ${fields['NAME']}
+    Father's Name: ${fields['FATHERS_NAME']}
+    DOB: ${fields['DOB']}
+    Course: ${fields['SELECT_COURSE']}
   `;
-  qr.clear();
-  qr.makeCode(qrData);
 
+  qr.clear();
+  qr.makeCode(qrText);
+
+  // PHOTO
   const photoElement = document.getElementById("previewImage");
   const photopreview = document.getElementById("croppedImage");
-  const rawLink = fields['photourl'];
+  let rawLink = fields['photourl'];
+
   if (!rawLink) return;
 
-  let fileIdMatch = rawLink.match(/\/d\/([a-zA-Z0-9_-]+)/);
-  let fileId = fileIdMatch ? fileIdMatch[1] : null;
+  let fileId = (rawLink.match(/\/d\/([a-zA-Z0-9_-]+)/) || [])[1];
   if (!fileId) {
-    const idMatch = rawLink.match(/[?&]id=([a-zA-Z0-9_-]+)/);
-    if (idMatch && idMatch[1]) fileId = idMatch[1];
+    let m = rawLink.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+    if (m) fileId = m[1];
   }
 
-  if (fileId) {
-    const imageUrl = `https://lh3.googleusercontent.com/d/${fileId}=s800`;
-    photoElement.src = imageUrl;
-    photopreview.src = imageUrl;
-    photoElement.style.display = "block";
-    photopreview.style.display = "block";
+  if (!fileId) return;
 
-    if (cropper) cropper.destroy();
-    cropper = new Cropper(photoElement, {
-      viewMode: 1,
-      autoCropArea: 0.8,
-      crop() {
-        const canvas = cropper.getCroppedCanvas({ width: 200, height: 200 });
-        photopreview.src = canvas.toDataURL();
-      }
-    });
-  }
+  const imageUrl = `https://lh3.googleusercontent.com/d/${fileId}=s800`;
+  photoElement.src = imageUrl;
+  photopreview.src = imageUrl;
+
+  photoElement.style.display = "block";
+  photopreview.style.display = "block";
+
+  if (cropper) cropper.destroy();
+  cropper = new Cropper(photoElement, {
+    viewMode: 1,
+    autoCropArea: 0.8,
+    crop() {
+      const canvas = cropper.getCroppedCanvas({ width: 200, height: 200 });
+      photopreview.src = canvas.toDataURL();
+    }
+  });
 }
 
-// 🔹 Page load पर QR init और auto-load
+// Page Load
 window.addEventListener("load", () => {
   qr = new QRCode(document.getElementById("qrcode"), {
     text: "QR will update after data load",
@@ -153,11 +177,11 @@ window.addEventListener("load", () => {
     height: 200
   });
 
-  const urlParams = new URLSearchParams(window.location.search);
-  const rollNumber = urlParams.get("roll");
-  if (rollNumber) {
-    document.getElementById("idInput").value = rollNumber;
+  const param = new URLSearchParams(window.location.search);
+  const roll = param.get("roll");
+  if (roll) {
+    document.getElementById("idInput").value = roll;
     fetchFullData();
   }
 });
-// </script>
+/* </script> */
